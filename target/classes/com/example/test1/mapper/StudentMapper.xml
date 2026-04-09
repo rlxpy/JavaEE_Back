@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace必须与Mapper接口的全类名一致 -->
+<mapper namespace="com.example.test1.mapper.StudentMapper">
+    <insert id="insertStudent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO student (name, age) VALUES (#{name}, #{age})
+    </insert>
+
+    <update id="updateStudent">
+        UPDATE student
+        SET name = #{name}, age = #{age}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteStudent">
+        DELETE FROM student WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteAllStudents">
+        DELETE FROM student
+    </delete>
+
+    <select id="getStudentById" resultType="com.example.test1.entity.Student">
+        SELECT id, name, age FROM student WHERE id = #{id}
+    </select>
+
+    <select id="getAllStudents" resultType="com.example.test1.entity.Student">
+        SELECT id, name, age FROM student
+    </select>
+</mapper>
