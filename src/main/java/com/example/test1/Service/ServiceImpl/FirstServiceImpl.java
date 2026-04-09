@@ -13,6 +13,6 @@ public class FirstServiceImpl implements TestService {
 
     @Override
     public void getDate() {
-        String date=testMapper.getDate();
+        /*String date=testMapper.getDate();*/
     }
 }
