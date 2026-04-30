@@ -61,7 +61,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.30</version> <!-- 版本号可以用最新的 -->
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
