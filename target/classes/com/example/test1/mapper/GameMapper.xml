@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.test1.mapper.GameMapper">
+
+    <select id="getAllGames" resultType="com.example.test1.entity.Game">
+        SELECT * FROM games
+        <where>
+            status = 1
+            <if test="keyword != null and keyword != ''">
+                AND (game_name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="getGameById" resultType="com.example.test1.entity.Game">
+        SELECT id, developer_id, category_id, game_name, description, cover_image, download_link, average_rating, create_time
+        FROM games
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateGameRating">
+        UPDATE games SET average_rating = #{avgRating} WHERE id = #{gameId}
+    </update>
+
+    <select id="getAverageRatingByGameId" resultType="Double">
+        SELECT AVG(rating) FROM comments WHERE game_id = #{gameId}
+    </select>
+
+    <insert id="insertGame" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO games (developer_id, category_id, game_name, description, cover_image, download_link)
+        VALUES (#{developerId}, #{categoryId}, #{gameName}, #{description}, #{coverImage}, #{downloadLink})
+    </insert>
+
+    <select id="getGamesByStatus" resultType="com.example.test1.entity.Game">
+        SELECT * FROM games WHERE status = #{status} ORDER BY create_time DESC
+    </select>
+
+    <update id="updateGameStatus">
+        UPDATE games SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <select id="getGamesByDeveloperId" resultType="com.example.test1.entity.Game">
+        SELECT * FROM games WHERE developer_id = #{developerId} ORDER BY create_time DESC
+    </select>
+
+    <delete id="deleteGame">
+        DELETE FROM games WHERE id = #{id} AND developer_id = #{developerId}
+    </delete>
+
+    <update id="updateGame">
+        UPDATE games
+        SET game_name = #{gameName},
+            description = #{description},
+            cover_image = #{coverImage}
+        WHERE id = #{id} AND developer_id = #{developerId}
+    </update>
+
+    <select id="getAllGamesForAdmin" resultType="com.example.test1.entity.Game">
+        SELECT * FROM games
+        <where>
+            <if test="keyword != null and keyword != ''">
+                (game_name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <delete id="deleteGameByAdmin">
+        DELETE FROM games WHERE id = #{id}
+    </delete>
+</mapper>

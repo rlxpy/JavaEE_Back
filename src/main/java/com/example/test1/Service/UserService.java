@@ -17,4 +17,11 @@ public interface UserService {
 
     boolean deleteAllUsers();
 
+    //注册方法
+    String register(User user);
+    //登陆方法
+    User login(String username, String password);
+
+    List<User> getUsersByCondition(String keyword, Integer role);
+
 }

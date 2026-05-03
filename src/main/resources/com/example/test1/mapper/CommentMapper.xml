@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.test1.mapper.CommentMapper">
+
+    <insert id="insertComment">
+        INSERT INTO comments (user_id, game_id, post_id, content, rating)
+        VALUES (#{userId}, #{gameId}, #{postId}, #{content}, #{rating})
+    </insert>
+
+    <select id="getCommentsByGameId" resultType="com.example.test1.entity.Comment">
+        SELECT c.*, u.nickname, u.avatar
+        FROM comments c
+                 LEFT JOIN users u ON c.user_id = u.id
+        WHERE c.game_id = #{gameId}
+        ORDER BY c.create_time DESC
+    </select>
+
+    <select id="getCommentsByPostId" resultType="com.example.test1.entity.Comment">
+        SELECT c.*, u.nickname, u.avatar
+        FROM comments c
+                 LEFT JOIN users u ON c.user_id = u.id
+        WHERE c.post_id = #{postId}
+        ORDER BY c.create_time ASC
+    </select>
+
+    <select id="getAllCommentsForAdmin" resultType="com.example.test1.entity.Comment">
+        SELECT c.*, u.nickname, u.avatar
+        FROM comments c
+        LEFT JOIN users u ON c.user_id = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                c.content LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <delete id="deleteCommentByAdmin">
+        DELETE FROM comments WHERE id = #{id}
+    </delete>
+</mapper>
