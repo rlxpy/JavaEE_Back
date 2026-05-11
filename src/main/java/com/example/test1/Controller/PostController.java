@@ -1,9 +1,8 @@
 package com.example.test1.Controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.Service.PostService;
 import com.example.test1.entity.Post;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,18 +23,22 @@ public class PostController {
     public Map<String, Object> getPostsByPage(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String keyword) { // ⭐️ 加上可选的 keyword 参数
+            @RequestParam(required = false) String keyword) {
 
         Map<String, Object> result = new HashMap<>();
         try {
-            PageHelper.startPage(page, size);
-            // ⭐️ 将 keyword 传给 Service
-            List<Post> list = postService.getAllPosts(keyword);
-            PageInfo<Post> pageInfo = new PageInfo<>(list);
+            // ⭐️ 改名区分普通查询，这里叫 getPostsByPage
+            IPage<Post> pageInfo = postService.getPostsByPage(page, size, keyword);
+
+            Map<String, Object> pageData = new HashMap<>();
+            pageData.put("total", pageInfo.getTotal());
+            pageData.put("list", pageInfo.getRecords());
+            pageData.put("pageNum", pageInfo.getCurrent());
+            pageData.put("pageSize", pageInfo.getSize());
 
             result.put("code", 200);
             result.put("msg", "获取帖子列表成功");
-            result.put("data", pageInfo);
+            result.put("data", pageData);
         } catch (Exception e) {
             result.put("code", 500);
             result.put("msg", "获取失败：" + e.getMessage());

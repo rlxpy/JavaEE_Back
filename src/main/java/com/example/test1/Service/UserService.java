@@ -1,5 +1,6 @@
 package com.example.test1.Service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.entity.User;
 
 import java.util.List;
@@ -22,6 +23,6 @@ public interface UserService {
     //登陆方法
     User login(String username, String password);
 
-    List<User> getUsersByCondition(String keyword, Integer role);
+    IPage<User> getUsersByCondition(int page,int size,String keyword, Integer role);
 
 }

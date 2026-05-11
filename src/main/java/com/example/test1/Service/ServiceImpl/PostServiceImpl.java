@@ -1,5 +1,8 @@
 package com.example.test1.Service.ServiceImpl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.test1.Service.PostService;
 import com.example.test1.entity.Post;
 import com.example.test1.mapper.PostMapper;
@@ -33,8 +36,16 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<Post> getPostsByUserId(Integer userId, String keyword) {
-        return postMapper.getPostsByUserId(userId, keyword);
+    public IPage<Post> getPostsByPage(int page, int size, String keyword) {
+        Page<Post> pageParam = new Page<>(page, size); // 创建分页对象
+        LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
+
+        if (keyword != null && !keyword.isEmpty()) {
+            // 比如按标题搜索
+            wrapper.like(Post::getTitle, keyword);
+        }
+
+        return postMapper.selectPage(pageParam, wrapper); // ⭐️ 原生分页魔法！
     }
 
     @Override

@@ -1,9 +1,8 @@
 package com.example.test1.Controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.entity.Comment;
 import com.example.test1.Service.CommentService;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,12 +65,23 @@ public class CommentController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword) {
         Map<String, Object> result = new HashMap<>();
-        PageHelper.startPage(page, size);
-        List<Comment> list = commentService.getAllCommentsForAdmin(keyword);
-        PageInfo<Comment> pageInfo = new PageInfo<>(list);
+        try {
+            // ⭐️ 调用 Service 层（需去 Service 加 page 和 size 参数）
+            IPage<Comment> pageInfo = commentService.getAllCommentsForAdmin(page, size, keyword);
 
-        result.put("code", 200);
-        result.put("data", pageInfo);
+            // ⭐️ 伪装成 PageHelper 格式返回给前端
+            Map<String, Object> pageData = new HashMap<>();
+            pageData.put("total", pageInfo.getTotal());
+            pageData.put("list", pageInfo.getRecords());
+            pageData.put("pageNum", pageInfo.getCurrent());
+            pageData.put("pageSize", pageInfo.getSize());
+
+            result.put("code", 200);
+            result.put("data", pageData);
+        } catch (Exception e) {
+            result.put("code", 500);
+            result.put("msg", "分页获取失败：" + e.getMessage());
+        }
         return result;
     }
 

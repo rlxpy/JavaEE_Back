@@ -1,12 +1,10 @@
 package com.example.test1.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.test1.entity.Post;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 // PostLikeMapper.java
 @Mapper
-public interface PostLikeMapper {
-    Integer checkLike(@Param("userId") Integer userId, @Param("postId") Integer postId);
-    void addLike(@Param("userId") Integer userId, @Param("postId") Integer postId);
-    void removeLike(@Param("userId") Integer userId, @Param("postId") Integer postId);
-}
+public interface PostLikeMapper extends BaseMapper<Post> {}

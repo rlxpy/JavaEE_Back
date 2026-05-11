@@ -1,9 +1,8 @@
 package com.example.test1.Controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.Service.UserService;
 import com.example.test1.entity.User;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -134,18 +133,19 @@ public class UserController {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // 1. 开启分页插件魔法 (紧跟在这个方法后的第一个 MyBatis 查询会被自动分页)
-            PageHelper.startPage(page, size);
+            // ⭐️ 直接调用 Service，拿到 MP 的分页结果
+            IPage<User> pageInfo = userService.getUsersByCondition(page, size, keyword, role);
 
-            // 2. 执行条件查询 (此时去数据库查的已经被自动加上了 LIMIT)
-            List<User> list = userService.getUsersByCondition(keyword, role);
-
-            // 3. 将结果包装成 PageInfo 对象，它自动包含了总页数、总条数、当前页数据等极其丰富的信息！
-            PageInfo<User> pageInfo = new PageInfo<>(list);
+            // ⭐️ 完美伪装成 PageHelper 的返回格式，保证前端不崩！
+            Map<String, Object> pageData = new HashMap<>();
+            pageData.put("total", pageInfo.getTotal());        // 总条数
+            pageData.put("list", pageInfo.getRecords());       // 当前页的数据列表
+            pageData.put("pageNum", pageInfo.getCurrent());    // 当前页码
+            pageData.put("pageSize", pageInfo.getSize());      // 每页条数
 
             result.put("code", 200);
             result.put("msg", "查询成功");
-            result.put("data", pageInfo); // 把整个 pageInfo 返回给前端
+            result.put("data", pageData);
         } catch (Exception e) {
             result.put("code", 500);
             result.put("msg", "分页查询失败：" + e.getMessage());

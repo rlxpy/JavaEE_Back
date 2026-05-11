@@ -1,9 +1,8 @@
 package com.example.test1.Controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.entity.Game;
 import com.example.test1.Service.GameService;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -62,22 +61,26 @@ public class GameController {
         return result;
     }
 
-    // ⭐️ 新增：分页获取游戏大厅列表 (支持搜索)
+    // ⭐️ 分页获取游戏大厅列表 (重构为 MyBatis-Plus 分页)
     @GetMapping("/page")
     public Map<String, Object> getGamesByPage(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "12") int size, // 每页12个（一行4个，正好3行）
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String keyword) {
 
         Map<String, Object> result = new HashMap<>();
         try {
-            // ⭐️ 开启分页魔法
-            PageHelper.startPage(page, size);
-            List<Game> list = gameService.getAllGames(keyword);
-            PageInfo<Game> pageInfo = new PageInfo<>(list);
+            // 改名调用 getGamesByPage
+            IPage<Game> pageInfo = gameService.getGamesByPage(page, size, keyword);
+
+            Map<String, Object> pageData = new HashMap<>();
+            pageData.put("total", pageInfo.getTotal());
+            pageData.put("list", pageInfo.getRecords());
+            pageData.put("pageNum", pageInfo.getCurrent());
+            pageData.put("pageSize", pageInfo.getSize());
 
             result.put("code", 200);
-            result.put("data", pageInfo);
+            result.put("data", pageData);
         } catch (Exception e) {
             result.put("code", 500);
             result.put("msg", "获取游戏列表失败：" + e.getMessage());
