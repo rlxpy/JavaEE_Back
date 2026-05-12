@@ -1,6 +1,6 @@
 package com.example.test1.Controller;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.metadata.IPage; // ⭐️ 引入 MP 的分页
 import com.example.test1.entity.Game;
 import com.example.test1.Service.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +18,8 @@ public class GameController {
     @Autowired
     private GameService gameService;
 
-    /// 获取所有已发布的游戏 (支持搜索)
     @GetMapping("/list")
-    public Map<String, Object> getGameList(@RequestParam(required = false) String keyword) { // ⭐️ 加上可选的 keyword 参数
+    public Map<String, Object> getGameList(@RequestParam(required = false) String keyword) {
         Map<String, Object> result = new HashMap<>();
         List<Game> list = gameService.getAllGames(keyword);
         result.put("code", 200);
@@ -28,13 +27,10 @@ public class GameController {
         return result;
     }
 
-    // ⭐ 新增：获取游戏详情接口
     @GetMapping("/detail/{id}")
     public Map<String, Object> getGameDetail(@PathVariable Integer id) {
         Map<String, Object> result = new HashMap<>();
-
         Game game = gameService.getGameById(id);
-
         if (game != null) {
             result.put("code", 200);
             result.put("msg", "获取游戏详情成功");
@@ -43,7 +39,6 @@ public class GameController {
             result.put("code", 404);
             result.put("msg", "抱歉，未找到该游戏");
         }
-
         return result;
     }
 
@@ -61,7 +56,6 @@ public class GameController {
         return result;
     }
 
-    // ⭐️ 分页获取游戏大厅列表 (重构为 MyBatis-Plus 分页)
     @GetMapping("/page")
     public Map<String, Object> getGamesByPage(
             @RequestParam(defaultValue = "1") int page,
@@ -70,9 +64,7 @@ public class GameController {
 
         Map<String, Object> result = new HashMap<>();
         try {
-            // 改名调用 getGamesByPage
             IPage<Game> pageInfo = gameService.getGamesByPage(page, size, keyword);
-
             Map<String, Object> pageData = new HashMap<>();
             pageData.put("total", pageInfo.getTotal());
             pageData.put("list", pageInfo.getRecords());
@@ -88,9 +80,6 @@ public class GameController {
         return result;
     }
 
-    // ================== 下面是超级管理员的审核专属接口 ==================
-
-    // 获取特定状态的游戏列表（比如传 0 获取待审核列表）
     @GetMapping("/audit/list")
     public Map<String, Object> getAuditGameList(@RequestParam Integer status) {
         Map<String, Object> result = new HashMap<>();
@@ -100,7 +89,6 @@ public class GameController {
         return result;
     }
 
-    // 审核游戏（通过或驳回）
     @PostMapping("/audit/process")
     public Map<String, Object> processGameAudit(@RequestParam Integer id, @RequestParam Integer status) {
         Map<String, Object> result = new HashMap<>();
@@ -115,9 +103,6 @@ public class GameController {
         return result;
     }
 
-    // ================== 下面是开发者专属接口 ==================
-
-    // 获取开发者自己发布的所有游戏
     @GetMapping("/developer/{developerId}")
     public Map<String, Object> getDeveloperGames(@PathVariable Integer developerId) {
         Map<String, Object> result = new HashMap<>();
@@ -127,7 +112,6 @@ public class GameController {
         return result;
     }
 
-    // 开发者删除自己的游戏
     @DeleteMapping("/delete")
     public Map<String, Object> deleteGame(@RequestParam Integer id, @RequestParam Integer developerId) {
         Map<String, Object> result = new HashMap<>();
@@ -142,12 +126,10 @@ public class GameController {
         return result;
     }
 
-    // 开发者修改游戏信息
     @PostMapping("/update")
     public Map<String, Object> updateGame(@RequestBody Game game) {
         Map<String, Object> result = new HashMap<>();
         try {
-            // 注意：前端传来的 game 对象里必须包含 id 和 developerId
             gameService.updateGame(game);
             result.put("code", 200);
             result.put("msg", "游戏信息修改成功！");
@@ -158,20 +140,28 @@ public class GameController {
         return result;
     }
 
-    // 管理员获取全站游戏列表 (分页+搜索)
+    // 👑 管理员获取全站游戏列表 (MP 原生分页)
     @GetMapping("/admin/all")
     public Map<String, Object> getAllGamesForAdmin(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String keyword) {
+
         Map<String, Object> result = new HashMap<>();
-        PageInfo<Game> pageInfo = gameService.getAllGamesForAdmin(page, size, keyword);
+        IPage<Game> pageInfo = gameService.getAllGamesForAdmin(page, size, keyword);
+
+        // ⭐️ 伪装成前端能看懂的结构
+        Map<String, Object> pageData = new HashMap<>();
+        pageData.put("total", pageInfo.getTotal());
+        pageData.put("list", pageInfo.getRecords());
+        pageData.put("pageNum", pageInfo.getCurrent());
+        pageData.put("pageSize", pageInfo.getSize());
+
         result.put("code", 200);
-        result.put("data", pageInfo); // ⭐️ 把查询到的分页数据放进 data 里
-        return result; // ⭐️ 返回给前端
+        result.put("data", pageData);
+        return result;
     }
 
-    // 👑 管理员强制下架（彻底删除）游戏
     @DeleteMapping("/admin/delete")
     public Map<String, Object> deleteGameByAdmin(@RequestParam Integer id) {
         Map<String, Object> result = new HashMap<>();

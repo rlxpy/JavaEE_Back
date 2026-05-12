@@ -1,9 +1,14 @@
 package com.example.test1.Service.ServiceImpl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.test1.entity.Comment;
+import com.example.test1.entity.User;
 import com.example.test1.mapper.CommentMapper;
 import com.example.test1.Service.CommentService;
 import com.example.test1.mapper.GameMapper;
+import com.example.test1.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +22,40 @@ public class CommentServiceImpl implements CommentService {
     private CommentMapper commentMapper;
 
     @Autowired
-    private GameMapper gameMapper; // 注入 GameMapper
+    private GameMapper gameMapper;
+
+    @Autowired
+    private UserMapper userMapper; // ⭐️ 注入 UserMapper，用来查头像和昵称
+
+    // ==========================================
+    // ⭐️ 核心工具方法：给评论补全用户的头像和昵称
+    // ==========================================
+    private void fillUserInfo(Comment comment) {
+        if (comment != null && comment.getUserId() != null) {
+            User user = userMapper.selectById(comment.getUserId());
+            if (user != null) {
+                comment.setNickname(user.getNickname());
+                comment.setAvatar(user.getAvatar());
+            }
+        }
+    }
+
+    private void fillUserInfo(List<Comment> comments) {
+        if (comments != null) {
+            for (Comment comment : comments) {
+                fillUserInfo(comment);
+            }
+        }
+    }
+    // ==========================================
 
     @Override
     @Transactional
     public void addComment(Comment comment) {
-        // 1. 保存新评论 (无论是评价游戏还是回复帖子，都要执行)
-        commentMapper.insertComment(comment);
+        // 1. MP 原生保存评论
+        commentMapper.insert(comment);
 
-        // 2. ⭐️ 加上安全锁：只有当 gameId 有值时，才去更新游戏平均分！
+        // 2. 只有当 gameId 有值时，才去更新游戏平均分
         if (comment.getGameId() != null) {
             Double newAvg = gameMapper.getAverageRatingByGameId(comment.getGameId());
             if (newAvg != null) {
@@ -36,22 +66,42 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<Comment> getCommentsByGameId(Integer gameId) {
-        return commentMapper.getCommentsByGameId(gameId);
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Comment::getGameId, gameId).orderByDesc(Comment::getCreateTime);
+        List<Comment> comments = commentMapper.selectList(wrapper);
+
+        fillUserInfo(comments); // ⭐️ 补全数据
+        return comments;
     }
 
     @Override
     public List<Comment> getCommentsByPostId(Integer postId) {
-        return commentMapper.getCommentsByPostId(postId);
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        // ⭐️ 注意：帖子的回复一般是按时间正序排列（最早的在最上面），所以用 Asc
+        wrapper.eq(Comment::getPostId, postId).orderByAsc(Comment::getCreateTime);
+        List<Comment> comments = commentMapper.selectList(wrapper);
+
+        fillUserInfo(comments); // ⭐️ 补全数据
+        return comments;
     }
 
     @Override
-    public List<Comment> getAllCommentsForAdmin(String keyword) {
-        return commentMapper.getAllCommentsForAdmin(keyword);
+    public IPage<Comment> getAllCommentsForAdmin(int page, int size, String keyword) {
+        Page<Comment> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.like(Comment::getContent, keyword);
+        }
+        wrapper.orderByDesc(Comment::getCreateTime);
+
+        IPage<Comment> commentPage = commentMapper.selectPage(pageParam, wrapper);
+
+        fillUserInfo(commentPage.getRecords()); // ⭐️ 补全当前页的数据
+        return commentPage;
     }
 
     @Override
     public void deleteCommentByAdmin(Integer id) {
-        commentMapper.deleteCommentByAdmin(id);
+        commentMapper.deleteById(id);
     }
-
 }

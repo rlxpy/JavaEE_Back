@@ -5,11 +5,14 @@ import com.example.test1.entity.Post;
 import java.util.List;
 
 public interface PostService {
+    IPage<Post> getPostsByPage(int page, int size, String keyword);
     List<Post> getAllPosts(String keyword);
     void addPost(Post post);
-    Post getPostById(int id);
-    IPage<Post> getPostsByUserId(int page, int size,Integer userId, String keyword);
-    void deletePost(int id, int userId);
-    void deletePostByAdmin(int id);
-
+    Post getPostById(Integer id);
+    List<Post> getPostsByUserId(Integer userId, String keyword);
+    void deletePost(Integer id, Integer userId);
+    void deletePostByAdmin(Integer id);
+    void incrementViewCount(Integer id);
+    void incrementLikeCount(Integer id);
+    void decrementLikeCount(Integer id);
 }

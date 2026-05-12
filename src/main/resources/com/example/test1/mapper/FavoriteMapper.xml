@@ -5,18 +5,6 @@
 
 <mapper namespace="com.example.test1.mapper.FavoriteMapper">
 
-    <select id="checkFavorite" resultType="com.example.test1.entity.Favorite">
-        SELECT * FROM favorites WHERE user_id = #{userId} AND game_id = #{gameId}
-    </select>
-
-    <insert id="addFavorite">
-        INSERT INTO favorites (user_id, game_id) VALUES (#{userId}, #{gameId})
-    </insert>
-
-    <delete id="removeFavorite">
-        DELETE FROM favorites WHERE user_id = #{userId} AND game_id = #{gameId}
-    </delete>
-
     <select id="getFavoriteGamesByUserId" resultType="com.example.test1.entity.Game">
         SELECT g.id, g.developer_id, g.category_id, g.game_name, g.description, g.cover_image, g.download_link, g.average_rating, g.create_time
         FROM games g

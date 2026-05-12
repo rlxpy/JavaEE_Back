@@ -1,6 +1,7 @@
 package com.example.test1.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField; // ⭐️ 引入 MP 的注解
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,6 +11,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@TableName("posts")
 public class Post {
     private Integer id;
     private Integer userId;

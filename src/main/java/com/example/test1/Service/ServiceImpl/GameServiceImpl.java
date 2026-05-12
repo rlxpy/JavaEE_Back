@@ -1,10 +1,11 @@
 package com.example.test1.Service.ServiceImpl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.test1.Service.GameService;
 import com.example.test1.entity.Game;
 import com.example.test1.mapper.GameMapper;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,55 +19,92 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public List<Game> getAllGames(String keyword) {
-        return gameMapper.getAllGames(keyword);
+        LambdaQueryWrapper<Game> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Game::getStatus, 1); // ⭐️ 只能查已上架的
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w.like(Game::getGameName, keyword).or().like(Game::getDescription, keyword));
+        }
+        wrapper.orderByDesc(Game::getCreateTime);
+        return gameMapper.selectList(wrapper);
+    }
+
+    @Override
+    public IPage<Game> getGamesByPage(int page, int size, String keyword) {
+        Page<Game> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<Game> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Game::getStatus, 1); // ⭐️ 只能查已上架的
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w.like(Game::getGameName, keyword).or().like(Game::getDescription, keyword));
+        }
+        wrapper.orderByDesc(Game::getCreateTime);
+        return gameMapper.selectPage(pageParam, wrapper);
     }
 
     @Override
     public Game getGameById(Integer id) {
-        return gameMapper.getGameById(id);
+        return gameMapper.selectById(id);
     }
 
     @Override
     public void addGame(Game game) {
-        gameMapper.insertGame(game);
+        // 默认状态设为待审核 (假设 0 是待审核)
+        if(game.getStatus() == null){
+            game.setStatus(0);
+        }
+        gameMapper.insert(game);
     }
 
     @Override
     public List<Game> getGamesByStatus(Integer status) {
-        return gameMapper.getGamesByStatus(status);
+        LambdaQueryWrapper<Game> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Game::getStatus, status).orderByDesc(Game::getCreateTime);
+        return gameMapper.selectList(wrapper);
     }
 
     @Override
     public void updateGameStatus(Integer id, Integer status) {
-        gameMapper.updateGameStatus(id, status);
+        Game game = new Game();
+        game.setId(id);
+        game.setStatus(status);
+        gameMapper.updateById(game); // ⭐️ 智能只更新 status 字段
     }
 
     @Override
     public List<Game> getGamesByDeveloperId(Integer developerId) {
-        return gameMapper.getGamesByDeveloperId(developerId);
+        LambdaQueryWrapper<Game> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Game::getDeveloperId, developerId).orderByDesc(Game::getCreateTime);
+        return gameMapper.selectList(wrapper);
     }
 
     @Override
     public void deleteGame(Integer id, Integer developerId) {
-        gameMapper.deleteGame(id, developerId);
+        LambdaQueryWrapper<Game> wrapper = new LambdaQueryWrapper<>();
+        // ⭐️ 安全校验：必须是该开发者自己的游戏
+        wrapper.eq(Game::getId, id).eq(Game::getDeveloperId, developerId);
+        gameMapper.delete(wrapper);
     }
 
     @Override
     public void updateGame(Game game) {
-        gameMapper.updateGame(game);
+        LambdaQueryWrapper<Game> wrapper = new LambdaQueryWrapper<>();
+        // ⭐️ 安全校验：必须是该开发者自己的游戏
+        wrapper.eq(Game::getId, game.getId()).eq(Game::getDeveloperId, game.getDeveloperId());
+        gameMapper.update(game, wrapper);
     }
 
     @Override
-    public PageInfo<Game> getAllGamesForAdmin(int page, int size, String keyword) {
-        PageHelper.startPage(page, size);
-        List<Game> list = gameMapper.getAllGamesForAdmin(keyword);
-        return new PageInfo<>(list);
+    public IPage<Game> getAllGamesForAdmin(int page, int size, String keyword) {
+        Page<Game> pageParam = new Page<>(page, size);
+        LambdaQueryWrapper<Game> wrapper = new LambdaQueryWrapper<>();
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.like(Game::getGameName, keyword).or().like(Game::getDescription, keyword);
+        }
+        wrapper.orderByDesc(Game::getCreateTime);
+        return gameMapper.selectPage(pageParam, wrapper);
     }
 
     @Override
     public void deleteGameByAdmin(Integer id) {
-        gameMapper.deleteGameByAdmin(id);
+        gameMapper.deleteById(id);
     }
-
-
 }
