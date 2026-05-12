@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.Service.UserService;
 import com.example.test1.entity.User;
 import com.example.test1.utils.JwtUtils;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -87,7 +88,7 @@ public class UserController {
     /*登陆注册区域*/
     // 注册接口：使用 POST 请求
     @PostMapping("/register")
-    public Map<String, Object> register(@RequestBody User user) {
+    public Map<String, Object> register(@Valid @RequestBody User user) {
         Map<String, Object> result = new HashMap<>();
 
         // ⭐️ 安全防御：如果前端传来的 role 是 2（超级管理员）或者为空，强制降级为 0（普通玩家）
@@ -108,7 +109,7 @@ public class UserController {
 
     // 登录接口：使用 POST 请求
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody User user) {
+    public Map<String, Object> login(@Valid @RequestBody User user) {
         Map<String, Object> result = new HashMap<>();
         User loginUser = userService.login(user.getUsername(), user.getPassword());
 
