@@ -3,6 +3,7 @@ package com.example.test1.Controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.Service.UserService;
 import com.example.test1.entity.User;
+import com.example.test1.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -95,7 +96,7 @@ public class UserController {
         }
 
         String msg = userService.register(user);
-        if("注册成功！".equals(msg)) {
+        if("注册成功".equals(msg)) {
             result.put("code", 200); // 200 表示成功
             result.put("msg", msg);
         }else{
@@ -112,9 +113,14 @@ public class UserController {
         User loginUser = userService.login(user.getUsername(), user.getPassword());
 
         if(loginUser != null) {
+            //2. 登录成功！立刻调用机器生成专属的“电子护照”\
+            String token = JwtUtils.generateToken(loginUser.getId(),loginUser.getRole());
+            //3. 安全规范：脱敏处理！把密码抹掉再发给前端，防止被黑客抓包
+            loginUser.setPassword(null);
             result.put("code", 200);
             result.put("msg", "登录成功！");
             result.put("data", loginUser);
+            result.put("token", token);
         }else{
             result.put("code", 400);
             result.put("msg", "账号或密码错误");

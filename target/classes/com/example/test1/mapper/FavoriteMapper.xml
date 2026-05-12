@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.test1.mapper.FavoriteMapper">
+
+    <select id="getFavoriteGamesByUserId" resultType="com.example.test1.entity.Game">
+        SELECT g.id, g.developer_id, g.category_id, g.game_name, g.description, g.cover_image, g.download_link, g.average_rating, g.create_time
+        FROM games g
+                 INNER JOIN favorites f ON g.id = f.game_id
+        WHERE f.user_id = #{userId}
+    </select>
+
+</mapper>

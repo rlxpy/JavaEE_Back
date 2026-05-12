@@ -55,7 +55,7 @@ public class PostLikeController {
             result.put("msg", "已取消点赞");
         } else {
             // ⭐️ MP 原生插入
-            PostLike newLike = new PostLike(null, userId, postId);
+            PostLike newLike = new PostLike(userId, postId);
             postLikeMapper.insert(newLike);
             postService.incrementLikeCount(postId); // 帖子总赞数 +1
             result.put("data", true);
