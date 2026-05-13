@@ -6,6 +6,7 @@ import com.example.test1.entity.User;
 import com.example.test1.utils.JwtUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -17,6 +18,9 @@ public class UserController {
 
     @Autowired
     public UserService userService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @GetMapping("/get/{id}")
     public User getUser(@PathVariable int id) {
@@ -91,6 +95,39 @@ public class UserController {
     public Map<String, Object> register(@Valid @RequestBody User user) {
         Map<String, Object> result = new HashMap<>();
 
+        String uuid = user.getUuid();
+        String userCode = user.getCode();
+
+        // 1. 基本参数防漏检查
+        if (uuid == null || userCode == null || uuid.isEmpty() || userCode.isEmpty()) {
+            result.put("code", 400);
+            result.put("msg", "验证码或暗号缺失！");
+            return result; // 🚨 直接阻断，绝不放行！
+        }
+
+        // 2. 去 Redis 拿真实的答案（根据前端给的暗号）
+        // 注意：这里你的 redis key 名字要和你生成验证码存进去时保持一致！比如如果是 "captcha:" + uuid
+        String redisKey = "captcha:" + uuid;
+        String realCode = stringRedisTemplate.opsForValue().get(redisKey);
+
+        // 3. 绝杀技：阅后即焚（防止重放攻击）
+        // 只要我查过了，不管接下来是对是错，立刻把 Redis 里的验证码炸毁！
+        stringRedisTemplate.delete(redisKey);
+
+        // 4. 防过期检查
+        if (realCode == null) {
+            result.put("code", 400);
+            result.put("msg", "验证码已过期，请点击图片重新获取！");
+            return result; // 阻断！
+        }
+
+        // 5. 对比答案（equalsIgnoreCase 表示忽略大小写，a 和 A 都算对）
+        if (!realCode.equalsIgnoreCase(userCode)) {
+            result.put("code", 400);
+            result.put("msg", "验证码输入错误！");
+            return result; // 阻断！
+        }
+
         // ⭐️ 安全防御：如果前端传来的 role 是 2（超级管理员）或者为空，强制降级为 0（普通玩家）
         if (user.getRole() == null || user.getRole() == 2) {
             user.setRole(0);
@@ -111,6 +148,40 @@ public class UserController {
     @PostMapping("/login")
     public Map<String, Object> login(@Valid @RequestBody User user) {
         Map<String, Object> result = new HashMap<>();
+
+        String uuid = user.getUuid();
+        String userCode = user.getCode();
+
+        // 1. 基本参数防漏检查
+        if (uuid == null || userCode == null || uuid.isEmpty() || userCode.isEmpty()) {
+            result.put("code", 400);
+            result.put("msg", "验证码或暗号缺失！");
+            return result; // 🚨 直接阻断，绝不放行！
+        }
+
+        // 2. 去 Redis 拿真实的答案（根据前端给的暗号）
+        // 注意：这里你的 redis key 名字要和你生成验证码存进去时保持一致！比如如果是 "captcha:" + uuid
+        String redisKey = "captcha:" + uuid;
+        String realCode = stringRedisTemplate.opsForValue().get(redisKey);
+
+        // 3. 绝杀技：阅后即焚（防止重放攻击）
+        // 只要我查过了，不管接下来是对是错，立刻把 Redis 里的验证码炸毁！
+        stringRedisTemplate.delete(redisKey);
+
+        // 4. 防过期检查
+        if (realCode == null) {
+            result.put("code", 400);
+            result.put("msg", "验证码已过期，请点击图片重新获取！");
+            return result; // 阻断！
+        }
+
+        // 5. 对比答案（equalsIgnoreCase 表示忽略大小写，a 和 A 都算对）
+        if (!realCode.equalsIgnoreCase(userCode)) {
+            result.put("code", 400);
+            result.put("msg", "验证码输入错误！");
+            return result; // 阻断！
+        }
+
         User loginUser = userService.login(user.getUsername(), user.getPassword());
 
         if(loginUser != null) {

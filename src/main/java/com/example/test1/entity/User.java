@@ -1,6 +1,7 @@
 package com.example.test1.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import jakarta.validation.constraints.NotBlank;
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 
 @Data
 @AllArgsConstructor
@@ -26,4 +28,14 @@ public class User {
     private String avatar;
     private Integer role;
 
+    @TableField(exist = false) // 极其重要！告诉 MyBatis-Plus 数据库里没有这个字段
+    private String code;
+
+    @TableField(exist = false) // 极其重要！
+    private String uuid;
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+    public String getUuid() { return uuid; }
+    public void setUuid(String uuid) { this.uuid = uuid; }
 }
