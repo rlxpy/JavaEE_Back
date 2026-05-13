@@ -1,7 +1,7 @@
 /*
 Navicat MySQL Data Transfer
 
-Source Server         : javaEE
+Source Server         : 1
 Source Server Version : 80028
 Source Host           : localhost:3306
 Source Database       : javaee
@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 80028
 File Encoding         : 65001
 
-Date: 2026-05-03 19:41:52
+Date: 2026-05-13 16:51:58
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -43,7 +43,7 @@ CREATE TABLE `comments` (
   `rating` tinyint DEFAULT NULL COMMENT '⭐新增：打分(1-5分，仅当评论游戏时有值)',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='评论与打分表';
+) ENGINE=InnoDB AUTO_INCREMENT=1855041539 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='评论与打分表';
 
 -- ----------------------------
 -- Records of comments
@@ -55,7 +55,6 @@ INSERT INTO `comments` VALUES ('4', '3', '1', null, '好玩啊', '5', '2026-05-0
 INSERT INTO `comments` VALUES ('5', '3', '1', null, '好玩', '5', '2026-05-02 13:00:21');
 INSERT INTO `comments` VALUES ('6', '3', '1', null, '好玩！！！', '5', '2026-05-02 18:10:00');
 INSERT INTO `comments` VALUES ('7', '3', '1', null, '确实不错', '5', '2026-05-02 18:14:03');
-INSERT INTO `comments` VALUES ('8', '3', '1', null, '真的吗？', '1', '2026-05-02 18:14:38');
 INSERT INTO `comments` VALUES ('9', '5', '4', null, '我觉得还可以吧', '5', '2026-05-03 09:45:46');
 INSERT INTO `comments` VALUES ('10', '5', null, '3', 'nb\n', '0', '2026-05-03 11:31:12');
 INSERT INTO `comments` VALUES ('11', '5', null, '3', '去11', '0', '2026-05-03 11:31:44');
@@ -70,12 +69,14 @@ CREATE TABLE `favorites` (
   `game_id` int NOT NULL COMMENT '收藏的游戏ID，关联games表',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='游戏收藏表';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='游戏收藏表';
 
 -- ----------------------------
 -- Records of favorites
 -- ----------------------------
 INSERT INTO `favorites` VALUES ('7', '5', '4', '2026-05-03 11:31:37');
+INSERT INTO `favorites` VALUES ('8', '6', '4', '2026-05-06 10:06:30');
+INSERT INTO `favorites` VALUES ('9', '207', '106', '2026-05-12 18:15:29');
 
 -- ----------------------------
 -- Table structure for `games`
@@ -93,7 +94,7 @@ CREATE TABLE `games` (
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
   `status` int DEFAULT '0' COMMENT '0-待审核 1-已上架 2-被驳回',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=106 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='游戏信息表';
+) ENGINE=InnoDB AUTO_INCREMENT=107 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='游戏信息表';
 
 -- ----------------------------
 -- Records of games
@@ -111,7 +112,6 @@ INSERT INTO `games` VALUES ('11', '12', null, '代号：史诗大作 V6', '这�
 INSERT INTO `games` VALUES ('12', '13', null, '代号：史诗大作 V7', '这是一跨耗时多年研发的现象级游戏系列第 7 部，画质精美，玩法丰富，不容错过！', null, null, '3.24', '2026-05-03 19:40:32', '1');
 INSERT INTO `games` VALUES ('13', '14', null, '代号：史诗大作 V8', '这是一跨耗时多年研发的现象级游戏系列第 8 部，画质精美，玩法丰富，不容错过！', null, null, '3.11', '2026-05-03 19:40:32', '1');
 INSERT INTO `games` VALUES ('14', '15', null, '代号：史诗大作 V9', '这是一跨耗时多年研发的现象级游戏系列第 9 部，画质精美，玩法丰富，不容错过！', null, null, '4.80', '2026-05-03 19:40:32', '1');
-INSERT INTO `games` VALUES ('15', '16', null, '代号：史诗大作 V10', '这是一跨耗时多年研发的现象级游戏系列第 10 部，画质精美，玩法丰富，不容错过！', null, null, '3.66', '2026-05-03 19:40:32', '1');
 INSERT INTO `games` VALUES ('16', '17', null, '代号：史诗大作 V11', '这是一跨耗时多年研发的现象级游戏系列第 11 部，画质精美，玩法丰富，不容错过！', null, null, '4.92', '2026-05-03 19:40:32', '1');
 INSERT INTO `games` VALUES ('17', '18', null, '代号：史诗大作 V12', '这是一跨耗时多年研发的现象级游戏系列第 12 部，画质精美，玩法丰富，不容错过！', null, null, '4.64', '2026-05-03 19:40:32', '1');
 INSERT INTO `games` VALUES ('18', '19', null, '代号：史诗大作 V13', '这是一跨耗时多年研发的现象级游戏系列第 13 部，画质精美，玩法丰富，不容错过！', null, null, '3.41', '2026-05-03 19:40:32', '1');
@@ -202,6 +202,7 @@ INSERT INTO `games` VALUES ('102', '103', null, '代号：史诗大作 V97', '�
 INSERT INTO `games` VALUES ('103', '104', null, '代号：史诗大作 V98', '这是一跨耗时多年研发的现象级游戏系列第 98 部，画质精美，玩法丰富，不容错过！', null, null, '4.36', '2026-05-03 19:40:32', '1');
 INSERT INTO `games` VALUES ('104', '105', null, '代号：史诗大作 V99', '这是一跨耗时多年研发的现象级游戏系列第 99 部，画质精美，玩法丰富，不容错过！', null, null, '3.03', '2026-05-03 19:40:32', '1');
 INSERT INTO `games` VALUES ('105', '106', null, '代号：史诗大作 V100', '这是一跨耗时多年研发的现象级游戏系列第 100 部，画质精美，玩法丰富，不容错过！', null, null, '3.10', '2026-05-03 19:40:32', '1');
+INSERT INTO `games` VALUES ('106', '6', '1', '测试', '测试', 'http://localhost:8080/uploads/60a3fd32-0b27-4705-a6c1-c5693e6b865b.png', '111', '0.00', '2026-05-06 10:06:12', '1');
 
 -- ----------------------------
 -- Table structure for `posts`
@@ -217,7 +218,7 @@ CREATE TABLE `posts` (
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '发帖时间',
   `like_count` int DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='交流帖子表';
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='交流帖子表';
 
 -- ----------------------------
 -- Records of posts
@@ -225,11 +226,11 @@ CREATE TABLE `posts` (
 INSERT INTO `posts` VALUES ('1', '6', null, '测试1', 'test111', '1', '2026-05-03 10:05:24', '0');
 INSERT INTO `posts` VALUES ('2', '6', '4', '测试2', '测试关联游戏功能', '3', '2026-05-03 10:23:51', '0');
 INSERT INTO `posts` VALUES ('3', '5', '1', '贴子测试', '可以输入关联游戏了', '23', '2026-05-03 10:29:44', '1');
-INSERT INTO `posts` VALUES ('4', '108', '7', '关于《代号：史诗大作 V2》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 1 关的那个隐藏 Boss...', '984', '2026-05-03 19:40:32', '417');
+INSERT INTO `posts` VALUES ('4', '108', '7', '关于《代号：史诗大作 V2》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 1 关的那个隐藏 Boss...', '985', '2026-05-03 19:40:32', '417');
 INSERT INTO `posts` VALUES ('5', '109', '8', '关于《代号：史诗大作 V3》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 2 关的那个隐藏 Boss...', '2941', '2026-05-03 19:40:32', '216');
-INSERT INTO `posts` VALUES ('6', '110', '9', '关于《代号：史诗大作 V4》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 3 关的那个隐藏 Boss...', '2022', '2026-05-03 19:40:32', '360');
-INSERT INTO `posts` VALUES ('7', '111', '10', '关于《代号：史诗大作 V5》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 4 关的那个隐藏 Boss...', '1958', '2026-05-03 19:40:32', '397');
-INSERT INTO `posts` VALUES ('8', '112', '11', '关于《代号：史诗大作 V6》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 5 关的那个隐藏 Boss...', '4010', '2026-05-03 19:40:32', '312');
+INSERT INTO `posts` VALUES ('6', '110', '9', '关于《代号：史诗大作 V4》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 3 关的那个隐藏 Boss...', '2023', '2026-05-03 19:40:32', '360');
+INSERT INTO `posts` VALUES ('7', '111', '10', '关于《代号：史诗大作 V5》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 4 关的那个隐藏 Boss...', '1962', '2026-05-03 19:40:32', '398');
+INSERT INTO `posts` VALUES ('8', '112', '11', '关于《代号：史诗大作 V6》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 5 关的那个隐藏 Boss...', '4011', '2026-05-03 19:40:32', '312');
 INSERT INTO `posts` VALUES ('9', '113', '12', '关于《代号：史诗大作 V7》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 6 关的那个隐藏 Boss...', '3571', '2026-05-03 19:40:32', '349');
 INSERT INTO `posts` VALUES ('10', '114', '13', '关于《代号：史诗大作 V8》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 7 关的那个隐藏 Boss...', '1765', '2026-05-03 19:40:32', '334');
 INSERT INTO `posts` VALUES ('11', '115', '14', '关于《代号：史诗大作 V9》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 8 关的那个隐藏 Boss...', '1408', '2026-05-03 19:40:32', '201');
@@ -272,9 +273,10 @@ INSERT INTO `posts` VALUES ('47', '151', '50', '关于《代号：史诗大作 V
 INSERT INTO `posts` VALUES ('48', '152', '51', '关于《代号：史诗大作 V46》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 45 关的那个隐藏 Boss...', '2011', '2026-05-03 19:40:32', '282');
 INSERT INTO `posts` VALUES ('49', '153', '52', '关于《代号：史诗大作 V47》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 46 关的那个隐藏 Boss...', '3098', '2026-05-03 19:40:32', '201');
 INSERT INTO `posts` VALUES ('50', '154', '53', '关于《代号：史诗大作 V48》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 47 关的那个隐藏 Boss...', '773', '2026-05-03 19:40:32', '282');
-INSERT INTO `posts` VALUES ('51', '155', '54', '关于《代号：史诗大作 V49》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 48 关的那个隐藏 Boss...', '1801', '2026-05-03 19:40:32', '53');
+INSERT INTO `posts` VALUES ('51', '155', '54', '关于《代号：史诗大作 V49》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 48 关的那个隐藏 Boss...', '1803', '2026-05-03 19:40:32', '54');
 INSERT INTO `posts` VALUES ('52', '156', '55', '关于《代号：史诗大作 V50》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 49 关的那个隐藏 Boss...', '2261', '2026-05-03 19:40:32', '470');
 INSERT INTO `posts` VALUES ('53', '157', '56', '关于《代号：史诗大作 V51》的深度评测与隐藏攻略', '游戏体验非常棒！在这个游戏里我发现了几个隐藏彩蛋，大家前期不要急着推主线，多探索支线任务，特别是第 50 关的那个隐藏 Boss...', '1751', '2026-05-03 19:40:32', '463');
+INSERT INTO `posts` VALUES ('54', '207', null, '111', '111', '0', '2026-05-12 18:19:03', '0');
 
 -- ----------------------------
 -- Table structure for `post_likes`
@@ -291,6 +293,8 @@ CREATE TABLE `post_likes` (
 -- Records of post_likes
 -- ----------------------------
 INSERT INTO `post_likes` VALUES ('5', '3', '2026-05-03 11:31:54');
+INSERT INTO `post_likes` VALUES ('207', '7', '2026-05-12 18:18:20');
+INSERT INTO `post_likes` VALUES ('207', '51', '2026-05-12 18:18:48');
 
 -- ----------------------------
 -- Table structure for `users`
@@ -299,18 +303,18 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT '用户ID',
   `username` varchar(50) NOT NULL COMMENT '用户名',
-  `password` varchar(50) NOT NULL COMMENT '密码',
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '瀵嗙爜',
   `nickname` varchar(50) NOT NULL COMMENT '昵称',
   `avatar` varchar(255) DEFAULT '' COMMENT '头像URL',
   `role` tinyint NOT NULL DEFAULT '0' COMMENT '角色：0-普通用户, 1-游戏作者, 2-超级管理员',
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=207 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表';
+) ENGINE=InnoDB AUTO_INCREMENT=214 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表';
 
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES ('1', 'zhangsan', '111111', '张三', 'https://example.com/avatar.png', '0');
+INSERT INTO `users` VALUES ('1', 'zhangsan', '111111', '张三', 'https://example.com/avatar.png', '1');
 INSERT INTO `users` VALUES ('2', '李四', '111111', 'ls', null, '0');
 INSERT INTO `users` VALUES ('3', 'player1', '123', '一号玩家pro', null, '0');
 INSERT INTO `users` VALUES ('4', '2220617749', '123456', 'Rlx', '', '2');
@@ -516,3 +520,10 @@ INSERT INTO `users` VALUES ('203', 'player_mock_97', '123456', '热心玩家_97'
 INSERT INTO `users` VALUES ('204', 'player_mock_98', '123456', '热心玩家_98', 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png', '0');
 INSERT INTO `users` VALUES ('205', 'player_mock_99', '123456', '热心玩家_99', 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png', '0');
 INSERT INTO `users` VALUES ('206', 'player_mock_100', '123456', '热心玩家_100', 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png', '0');
+INSERT INTO `users` VALUES ('207', 'Rlx', '$2a$10$2aCUghsKpJAQsTa9Ln0GHO1RfFC8YSsso0IgHToboxV.MTWLVAsZC', 'rl', null, '2');
+INSERT INTO `users` VALUES ('208', 'test4', '$2a$10$J9mz4RtaBWG/iRFUpakNFeuuqLlnGZ3OhwqbnpEeylJsoch/A3EA2', '444', '', '0');
+INSERT INTO `users` VALUES ('209', 'test5', '$2a$10$rA54/ffBjxdwpLQVg4X/aO3iscx2MSyPgBNCrFhUWhAGX4ZD5.ula', '555', '', '0');
+INSERT INTO `users` VALUES ('210', 'test6', '$2a$10$zY9iMEZ3U5QVWLR0lZsJDenu7uDTLysLMNURNNtU/LTpOo0vNZu9.', '666', '', '0');
+INSERT INTO `users` VALUES ('211', 'text777', '$2a$10$3dFG35TZGwQ5llifojq9t.X5lgy9OqjtmO4jgtQWHDsPLUILbdDxa', '777', '', '0');
+INSERT INTO `users` VALUES ('212', '123456', '$2a$10$gX3072gFisNVNAUfsPApsOKWgbhk0nBe1u/M.qfeAXwAf31rWScla', '1', '', '0');
+INSERT INTO `users` VALUES ('213', 'r2220617749', '$2a$10$Xzrx0WG23XXQ4qt4yxDV.urbaktrZjREwVGCREO8ihuMcJEsSj4qO', 'SuperAdmin', '', '2');
