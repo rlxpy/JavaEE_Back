@@ -5,14 +5,17 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.test1.Service.PostService;
-import com.example.test1.entity.Post;
-import com.example.test1.entity.User;
-import com.example.test1.mapper.PostMapper;
-import com.example.test1.mapper.UserMapper;
+import com.example.test1.entity.*;
+import com.example.test1.mapper.*;
+import com.example.test1.utils.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -21,10 +24,25 @@ public class PostServiceImpl implements PostService {
     private PostMapper postMapper;
 
     @Autowired
-    private UserMapper userMapper; // ⭐️ 注入 UserMapper，用来查头像和昵称！
+    private PostContentMapper postContentMapper;
+
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private UserSubscribedGameMapper userSubscribedGameMapper;
+
+    @Autowired
+    private PostLikeMapper postLikeMapper; // ⭐️ 新增注入：为了在缓存丢失时去查真实点赞名单
+
+    @Autowired
+    private GameMapper gameMapper;
 
     // ==========================================
-    // ⭐️ 核心工具方法：给帖子补全发帖人的头像和昵称
+    // ⭐️ 核心工具方法 1：给帖子补全发帖人的头像和昵称
     // ==========================================
     private void fillUserInfo(Post post) {
         if (post != null && post.getUserId() != null) {
@@ -45,21 +63,106 @@ public class PostServiceImpl implements PostService {
     }
 
     // ==========================================
+    // 🧠 核心工具方法 2：实时缓存懒加载引擎 (Cache-Aside)
+    // ==========================================
+    private void fillRealTimeStats(Post post) {
+        if (post == null) return;
+
+        Integer postId = post.getId();
+        String loadedFlagKey = "post:cache_loaded:" + postId;
+        String likeSetKey = "post:like:" + postId;
+        String trendingZSetKey = "post:trending:";
+
+        // 1. 如果缓存是热乎的（标记键存在），直接从 Redis 秒读，覆盖 MySQL 的旧数据
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(loadedFlagKey))) {
+            Double hotScore = stringRedisTemplate.opsForZSet().score(trendingZSetKey, postId.toString());
+            Long likeCount = stringRedisTemplate.opsForSet().size(likeSetKey);
+            if (hotScore != null) post.setHotScore(hotScore);
+            if (likeCount != null) post.setLikeCount(likeCount.intValue());
+            return; // 搞定，直接返回
+        }
+
+        // 2. ⚠️ 缓存未命中（过期或被清空了）！执行降级策略：去 MySQL 捞数据并重建缓存！
+        System.out.println("⚠️ 列表/详情查询时缓存未命中，正在从 MySQL 预热帖子 " + postId + " 的数据到 Redis...");
+
+        Double dbHotScore = post.getHotScore() != null ? post.getHotScore() : 0.0;
+        stringRedisTemplate.opsForZSet().add(trendingZSetKey, postId.toString(), dbHotScore);
+
+        LambdaQueryWrapper<PostLike> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(PostLike::getPostId, postId);
+        List<PostLike> likes = postLikeMapper.selectList(wrapper);
+
+        if (!likes.isEmpty()) {
+            String[] userIds = likes.stream()
+                    .map(like -> like.getUserId().toString())
+                    .toArray(String[]::new);
+            stringRedisTemplate.opsForSet().add(likeSetKey, userIds);
+            post.setLikeCount(likes.size()); // 以真实查出来的点赞数为准
+        } else {
+            post.setLikeCount(0);
+        }
+
+        // 重建完毕，赋予 2 小时生命周期
+        stringRedisTemplate.opsForValue().set(loadedFlagKey, "1", 2, TimeUnit.HOURS);
+        stringRedisTemplate.expire(likeSetKey, 2, TimeUnit.HOURS);
+    }
+
+    // ==========================================
+    // 接口实现
+    // ==========================================
 
     @Override
-    public IPage<Post> getPostsByPage(int page, int size, String keyword) {
+    public IPage<Post> getPostsByPage(int page, int size, String keyword, Integer categoryId, Integer gameId, Boolean isFollowFeed, String sortBy) {
         Page<Post> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
-        if (keyword != null && !keyword.isEmpty()) {
-            wrapper.like(Post::getTitle, keyword).or().like(Post::getContent, keyword);
-        }
-        wrapper.orderByDesc(Post::getCreateTime);
 
-        // 1. 先用 MP 分页查出纯净的帖子列表
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w
+                    .like(Post::getTitle, keyword)
+                    .or().inSql(Post::getId, "SELECT post_id FROM post_content WHERE content LIKE '%" + keyword + "%'")
+            );
+        }
+
+        if (categoryId != null) wrapper.eq(Post::getCategoryId, categoryId);
+        if (gameId != null) wrapper.eq(Post::getGameId, gameId);
+
+        if (isFollowFeed != null && isFollowFeed) {
+            Integer userId = UserContext.getUserId();
+            if (userId != null) {
+                LambdaQueryWrapper<UserSubscribedGame> subWrapper = new LambdaQueryWrapper<>();
+                subWrapper.eq(UserSubscribedGame::getUserId, userId);
+                List<UserSubscribedGame> subGames = userSubscribedGameMapper.selectList(subWrapper);
+
+                if (subGames != null && !subGames.isEmpty()) {
+                    List<Integer> subscribedGameIds = subGames.stream()
+                            .map(UserSubscribedGame::getGameId)
+                            .collect(Collectors.toList());
+                    wrapper.in(Post::getGameId, subscribedGameIds);
+                } else {
+                    wrapper.eq(Post::getId, -1);
+                }
+            }
+        }
+
+        // 5. ⭐️ 核心魔法：动态排序引擎
+        if ("hot".equals(sortBy)) {
+            // 如果前端要求看热门，就按热度分降序！
+            wrapper.orderByDesc(Post::getHotScore);
+        } else {
+            // 否则默认按最新时间降序
+            wrapper.orderByDesc(Post::getCreateTime);
+        }
+
         IPage<Post> postPage = postMapper.selectPage(pageParam, wrapper);
 
-        // 2. ⭐️ 遍历当前页的数据，把所有头像和昵称补齐！
-        fillUserInfo(postPage.getRecords());
+        // ⭐️ 分页查出后，给每一篇帖子补全头像，并【注入实时热度和点赞】
+        if (postPage.getRecords() != null) {
+            for (Post post : postPage.getRecords()) {
+                fillUserInfo(post);
+                fillRealTimeStats(post); // 🚀 列表页现在也绝对实时了！
+            }
+        }
+
         return postPage;
     }
 
@@ -71,22 +174,53 @@ public class PostServiceImpl implements PostService {
         }
         wrapper.orderByDesc(Post::getCreateTime);
         List<Post> posts = postMapper.selectList(wrapper);
-        fillUserInfo(posts); // ⭐️ 补全数据
+
+        if (posts != null) {
+            for (Post post : posts) {
+                fillUserInfo(post);
+                fillRealTimeStats(post); // 🚀
+            }
+        }
         return posts;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addPost(Post post) {
-        if(post.getViewCount() == null) post.setViewCount(0);
-        if(post.getLikeCount() == null) post.setLikeCount(0);
+        post.setViewCount(0);
+        post.setLikeCount(0);
+        post.setCommentCount(0);
+        post.setCollectCount(0);
+        post.setHotScore(0.0);
+
         postMapper.insert(post);
+
+        if(post.getContent()!=null && !post.getContent().isEmpty()){
+            PostContent postContent = new PostContent(post.getId(), post.getContent());
+            postContentMapper.insert(postContent);
+        }
     }
 
     @Override
     public Post getPostById(Integer id) {
-        incrementViewCount(id); // 浏览量 +1
+        incrementViewCount(id);
+
         Post post = postMapper.selectById(id);
-        fillUserInfo(post); // ⭐️ 补全单条帖子的数据
+        if(post == null) return null;
+
+        // ⭐️ 核心逻辑：如果帖子关联了游戏，把游戏名字查出来
+        if (post.getGameId() != null) {
+            Game game = gameMapper.selectById(post.getGameId());
+            if (game != null) {
+                post.setGameName(game.getGameName());
+            }
+        }
+
+        PostContent postContent = postContentMapper.selectById(id);
+        if(postContent != null) post.setContent(postContent.getContent());
+
+        fillUserInfo(post);
+        fillRealTimeStats(post);
         return post;
     }
 
@@ -99,7 +233,13 @@ public class PostServiceImpl implements PostService {
         }
         wrapper.orderByDesc(Post::getCreateTime);
         List<Post> posts = postMapper.selectList(wrapper);
-        fillUserInfo(posts); // ⭐️ 补全数据
+
+        if (posts != null) {
+            for (Post post : posts) {
+                fillUserInfo(post);
+                fillRealTimeStats(post); // 🚀 我的发帖列表也绝对实时了！
+            }
+        }
         return posts;
     }
 

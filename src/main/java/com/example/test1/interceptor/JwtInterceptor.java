@@ -27,9 +27,15 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         // 1. 从 HTTP 头部拿出 Token (前端通常放在名为 Authorization 或 token 的请求头里)
         String token = request.getHeader("token");
+        String requestURI = request.getRequestURI();
+
+        boolean isHybridApi = requestURI.contains("/post/page");
 
         // 2. 如果没带 Token，直接拦截！
         if(token == null || token.isEmpty()){
+            if (isHybridApi) {
+                return true;
+            }
             response.setStatus(401);
             response.setContentType("application/json;charset=utf-8");
             response.getWriter().write("{\"code\":401, \"msg\":\"请先登录！\"}");
@@ -46,6 +52,9 @@ public class JwtInterceptor implements HandlerInterceptor {
             return true;
         }catch (Exception e){
             // 解析失败（比如 Token 过期了，或者被篡改了）
+            if (isHybridApi) {
+                return true;
+            }
             response.setStatus(401);
             response.setContentType("application/json;charset=utf-8");
             response.getWriter().write("{\"code\":401, \"msg\":\"Token已过期或无效，请重新登录！\"}");

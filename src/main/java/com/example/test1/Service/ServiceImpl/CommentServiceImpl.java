@@ -1,13 +1,16 @@
 package com.example.test1.Service.ServiceImpl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.test1.entity.Comment;
+import com.example.test1.entity.Post;
 import com.example.test1.entity.User;
 import com.example.test1.mapper.CommentMapper;
 import com.example.test1.Service.CommentService;
 import com.example.test1.mapper.GameMapper;
+import com.example.test1.mapper.PostMapper;
 import com.example.test1.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,9 @@ public class CommentServiceImpl implements CommentService {
 
     @Autowired
     private GameMapper gameMapper;
+
+    @Autowired
+    private PostMapper postMapper;
 
     @Autowired
     private UserMapper userMapper; // ⭐️ 注入 UserMapper，用来查头像和昵称
@@ -55,12 +61,19 @@ public class CommentServiceImpl implements CommentService {
         // 1. MP 原生保存评论
         commentMapper.insert(comment);
 
-        // 2. 只有当 gameId 有值时，才去更新游戏平均分
+        // 2. 如果是游戏页面的评论，更新游戏平均分
         if (comment.getGameId() != null) {
             Double newAvg = gameMapper.getAverageRatingByGameId(comment.getGameId());
             if (newAvg != null) {
                 gameMapper.updateGameRating(comment.getGameId(), newAvg);
             }
+        }
+
+        // 3. ⭐️ 新增：如果是发在帖子下的评论，让该帖子的 comment_count 字段 +1
+        if (comment.getPostId() != null) {
+            UpdateWrapper<Post> wrapper = new UpdateWrapper<>();
+            wrapper.eq("id", comment.getPostId()).setSql("comment_count = comment_count + 1");
+            postMapper.update(null, wrapper);
         }
     }
 

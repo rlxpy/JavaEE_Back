@@ -45,9 +45,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/user/login", "/user/register") // 登录、注册必须放行
                 .excludePathPatterns("/api/captcha")
                 .excludePathPatterns("/uploads/**")                   // ⭐️ 极其重要：放行图片资源，否则前端图片全挂！
+                .excludePathPatterns("/category/list")
                 // 3. 游客可以公开查看的数据接口（根据业务需求放行）
                 .excludePathPatterns("/game/page", "/game/list", "/game/detail/**")
-                .excludePathPatterns("/post/page", "/post/detail/**")
+                .excludePathPatterns("/post/detail/**")
                 .excludePathPatterns("/comment/game/**", "/comment/post/**");
 
     }

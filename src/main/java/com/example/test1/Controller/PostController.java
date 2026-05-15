@@ -3,7 +3,9 @@ package com.example.test1.Controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.Service.PostService;
 import com.example.test1.entity.Post;
+import com.example.test1.utils.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -18,17 +20,25 @@ public class PostController {
     @Autowired
     private PostService postService;
 
-    // 分页获取交流大厅的所有帖子 (⭐️ 支持搜索)
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    // 分页获取交流大厅的所有帖子 (⭐️ 全面升级版)
     @GetMapping("/page")
     public Map<String, Object> getPostsByPage(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) Integer gameId,
+            @RequestParam(defaultValue = "false") Boolean isFollowFeed,
+            @RequestParam(defaultValue = "time") String sortBy // ⭐️ 新增：默认按时间排序
+    ) {
 
         Map<String, Object> result = new HashMap<>();
         try {
-            // ⭐️ 改名区分普通查询，这里叫 getPostsByPage
-            IPage<Post> pageInfo = postService.getPostsByPage(page, size, keyword);
+            // ⭐️ 把 sortBy 传进去
+            IPage<Post> pageInfo = postService.getPostsByPage(page, size, keyword, categoryId, gameId, isFollowFeed, sortBy);
 
             Map<String, Object> pageData = new HashMap<>();
             pageData.put("total", pageInfo.getTotal());
@@ -51,6 +61,8 @@ public class PostController {
     public Map<String, Object> addPost(@RequestBody Post post) {
         Map<String, Object> result = new HashMap<>();
         try {
+            post.setUserId(UserContext.getUserId());
+
             postService.addPost(post);
             result.put("code", 200);
             result.put("msg", "发帖成功！");
@@ -72,11 +84,13 @@ public class PostController {
     }
 
     // 获取我的所有发帖 (带搜索)
-    @GetMapping("/user/{userId}")
+    @GetMapping("/my")
     public Map<String, Object> getMyPosts(
-            @PathVariable Integer userId,
-            @RequestParam(required = false) String keyword) { // ⭐️ 加上可选的搜索词
+            @RequestParam(required = false) String keyword) {
         Map<String, Object> result = new HashMap<>();
+
+        Integer userId = UserContext.getUserId();
+
         List<Post> list = postService.getPostsByUserId(userId, keyword);
         result.put("code", 200);
         result.put("data", list);
@@ -85,8 +99,11 @@ public class PostController {
 
     // 删除我的帖子 (带上 userId 做安全校验)
     @DeleteMapping("/delete")
-    public Map<String, Object> deleteMyPost(@RequestParam Integer id, @RequestParam Integer userId) {
+    public Map<String, Object> deleteMyPost(@RequestParam Integer id) {
         Map<String, Object> result = new HashMap<>();
+
+        Integer userId = UserContext.getUserId();
+
         try {
             postService.deletePost(id, userId);
             result.put("code", 200);

@@ -13,22 +13,33 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("posts")
+@TableName("post")
 public class Post {
     @TableId(type = IdType.AUTO)
     private Integer id;
     private Integer userId;
     private Integer gameId;
+    private Integer categoryId;
     private String title;
-    private String content;
-    private Integer viewCount;
-    private Date createTime;
-    private Integer likeCount;
 
-    // ⭐ 告诉 MyBatis-Plus：这个字段数据库里没有，执行 CRUD 时别管它！
+    private Integer viewCount;
+    private Integer likeCount;
+    private Integer commentCount;
+    private Integer collectCount;
+    private Double hotScore;
+
+    private Date createTime;
+    private Date updateTime;
+
     @TableField(exist = false)
     private String nickname;
 
     @TableField(exist = false)
     private String avatar;
+
+    @TableField(exist = false)
+    private String content;
+
+    @TableField(exist = false)
+    private String gameName;
 }

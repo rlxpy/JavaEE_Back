@@ -7,13 +7,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("categories")
-public class Category {
+@TableName("user_subscribed_game")
+public class UserSubscribedGame {
     @TableId(type = IdType.AUTO)
     private Integer id;
-    private String name;
-    private String description;
+    private Integer userId;
+    private Integer gameId;
+    private Date createTime;
 }
