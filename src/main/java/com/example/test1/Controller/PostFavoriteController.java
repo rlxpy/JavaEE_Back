@@ -1,6 +1,8 @@
 package com.example.test1.Controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.example.test1.Service.NotificationService;
+import com.example.test1.entity.Notification;
 import com.example.test1.entity.Post;
 import com.example.test1.entity.PostFavorite;
 import com.example.test1.mapper.PostFavoriteMapper;
@@ -24,7 +26,10 @@ public class PostFavoriteController {
     private PostFavoriteMapper postFavoriteMapper;
 
     @Autowired
-    private PostMapper postMapper; // 需要用到 PostMapper 来查帖子的具体内容
+    private PostMapper postMapper;
+
+    @Autowired
+    private NotificationService notificationService; // 需要用到 PostMapper 来查帖子的具体内容
 
     // 1. 检查当前用户是否收藏了该帖子 (用于点亮星星)
     @GetMapping("/check")
@@ -54,21 +59,40 @@ public class PostFavoriteController {
         PostFavorite existRecord = postFavoriteMapper.selectOne(wrapper);
 
         if (existRecord != null) {
-            // 已存在，执行取消收藏
             postFavoriteMapper.deleteById(existRecord.getId());
             result.put("msg", "已取消收藏");
-            result.put("data", false); // 返回 false 表示当前是未收藏状态
+            result.put("data", false);
         } else {
-            // 不存在，执行加入收藏夹
             PostFavorite favorite = new PostFavorite();
             favorite.setUserId(userId);
             favorite.setPostId(postId);
             postFavoriteMapper.insert(favorite);
+
+            // ⭐️ 新增：触发帖子收藏通知
+            sendPostFavoriteNotification(postId, userId);
+
             result.put("msg", "已加入收藏夹⭐");
-            result.put("data", true); // 返回 true 表示当前是已收藏状态
+            result.put("data", true);
         }
         result.put("code", 200);
         return result;
+    }
+
+    // 📩 辅助方法：发送帖子收藏通知
+    private void sendPostFavoriteNotification(Integer postId, Integer senderId) {
+        Post post = postMapper.selectById(postId);
+        // 如果不是自己收藏自己的帖子
+        if (post != null && !post.getUserId().equals(senderId)) {
+            Notification notif = new Notification();
+            notif.setSenderId(senderId);
+            notif.setReceiverId(post.getUserId()); // 接收者是楼主
+            notif.setType(2); // 2 代表收藏
+            notif.setReferenceType("post");
+            notif.setReferenceId(postId);
+            notif.setContent("收藏了你的帖子: " + (post.getTitle().length() > 20 ? post.getTitle().substring(0, 20) + "..." : post.getTitle()));
+
+            notificationService.sendNotification(notif);
+        }
     }
 
     // 3. ⭐️ 获取我的收藏夹列表 (带出帖子详情)

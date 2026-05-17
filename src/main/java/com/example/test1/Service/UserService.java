@@ -25,4 +25,5 @@ public interface UserService {
 
     IPage<User> getUsersByCondition(int page,int size,String keyword, Integer role);
 
+    void updateUserStatus(Integer id, Integer status);
 }

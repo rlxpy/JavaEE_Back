@@ -1,6 +1,8 @@
 package com.example.test1.Controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.example.test1.Service.NotificationService;
+import com.example.test1.entity.Notification;
 import com.example.test1.entity.Post;
 import com.example.test1.entity.PostLike;
 import com.example.test1.mapper.PostLikeMapper;
@@ -28,6 +30,9 @@ public class PostLikeController {
 
     @Autowired
     private PostMapper postMapper; // ⭐️ 新增注入：用来查帖子的真实热度
+
+    @Autowired
+    private NotificationService notificationService;
 
     // ==========================================
     // 🧠 核心魔法：缓存预热与懒加载 (Cache-Aside)
@@ -96,7 +101,6 @@ public class PostLikeController {
         Map<String, Object> result = new HashMap<>();
         Integer userId = UserContext.getUserId();
 
-        // ⭐️ 先发制人：在点赞修改前，保证 Redis 里的点赞名单是全的！防止数据被覆盖清空！
         ensureCacheLoaded(postId);
 
         String likeSetKey = "post:like:" + postId;
@@ -105,13 +109,17 @@ public class PostLikeController {
         Long added = stringRedisTemplate.opsForSet().add(likeSetKey, userId.toString());
 
         if (added != null && added > 0) {
-            // 点赞
+            // 🟢 情况 A：点赞成功
             stringRedisTemplate.opsForZSet().incrementScore(trendingZSetKey, postId.toString(), 1);
             stringRedisTemplate.opsForSet().add("post:need_sync", postId.toString());
+
+            // ⭐️ 新增：触发实时通知逻辑
+            sendLikeNotification(postId, userId);
+
             result.put("data", true);
             result.put("msg", "点赞成功！");
         } else {
-            // 取消点赞
+            // 🔴 情况 B：取消点赞
             stringRedisTemplate.opsForSet().remove(likeSetKey, userId.toString());
             stringRedisTemplate.opsForZSet().incrementScore(trendingZSetKey, postId.toString(), -1);
             stringRedisTemplate.opsForSet().add("post:need_sync", postId.toString());
@@ -120,5 +128,21 @@ public class PostLikeController {
         }
         result.put("code", 200);
         return result;
+    }
+
+    // 📩 辅助方法：异步/解耦发送点赞通知
+    private void sendLikeNotification(Integer postId, Integer senderId) {
+        Post post = postMapper.selectById(postId);
+        if (post != null && !post.getUserId().equals(senderId)) {
+            Notification notif = new Notification();
+            notif.setSenderId(senderId);
+            notif.setReceiverId(post.getUserId()); // 接收者是楼主
+            notif.setType(1); // 1 代表点赞
+            notif.setReferenceType("post");
+            notif.setReferenceId(postId);
+            notif.setContent("赞了你的帖子");
+
+            notificationService.sendNotification(notif); // 存入数据库并触发 WebSocket
+        }
     }
 }

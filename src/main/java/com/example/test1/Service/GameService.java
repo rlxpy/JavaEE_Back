@@ -9,7 +9,7 @@ public interface GameService {
     List<Game> getAllGames(String keyword);
 
     // ⭐️ 新增分页获取游戏大厅接口
-    IPage<Game> getGamesByPage(int page, int size, String keyword);
+    IPage<Game> getGamesByPage(int page, int size, String keyword, Integer categoryId, String sortBy);
 
     Game getGameById(Integer id);
     void addGame(Game game);

@@ -62,7 +62,10 @@ public class UserServiceImpl implements UserService {
         if(user.getNickname() == null || user.getNickname().isEmpty()){
             user.setNickname(user.getUsername());
         }
-        user.setRole(0);
+        // ⭐️ 修复：如果前端传了角色就用前端的，如果没传（或恶意传空）才默认给 0 (普通玩家)
+        if (user.getRole() == null) {
+            user.setRole(0);
+        }
 
         //BCrypt 密码加盐
         String hashPass = BCrypt.hashpw(user.getPassword(),BCrypt.gensalt());
@@ -77,6 +80,15 @@ public class UserServiceImpl implements UserService {
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUsername, username);
         User user = userMapper.selectOne(queryWrapper);
+
+        if (user == null) {
+            throw new RuntimeException("用户名或密码错误！");
+        }
+
+        // ⭐️ 第一道防线：封禁账号禁止登录！
+        if (user.getStatus() != null && user.getStatus() == 1) {
+            throw new RuntimeException("🚫 您的账号已被永久封停，请联系客服处理！");
+        }
 
         if(user != null && BCrypt.checkpw(password,user.getPassword())){
             return user;
@@ -99,5 +111,13 @@ public class UserServiceImpl implements UserService {
         }
 
         return userMapper.selectPage(pageParam,wrapper);
+    }
+
+    // ⭐️ 封禁/解封用户的方法
+    public void updateUserStatus(Integer id, Integer status) {
+        com.example.test1.entity.User user = new com.example.test1.entity.User();
+        user.setId(id);
+        user.setStatus(status);
+        userMapper.updateById(user); // 只更新 status 字段
     }
 }

@@ -10,7 +10,7 @@
     </update>
 
     <select id="getAverageRatingByGameId" resultType="Double">
-        SELECT AVG(rating) FROM comments WHERE game_id = #{gameId}
+        SELECT AVG(rating) FROM comment WHERE game_id = #{gameId} AND (parent_id IS NULL OR parent_id = 0)
     </select>
 
 </mapper>

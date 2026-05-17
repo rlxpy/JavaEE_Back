@@ -29,14 +29,31 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public IPage<Game> getGamesByPage(int page, int size, String keyword) {
+    public IPage<Game> getGamesByPage(int page, int size, String keyword, Integer categoryId, String sortBy) {
         Page<Game> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<Game> wrapper = new LambdaQueryWrapper<>();
+
         wrapper.eq(Game::getStatus, 1); // ⭐️ 只能查已上架的
+
+        // 1. 关键字搜索条件
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.and(w -> w.like(Game::getGameName, keyword).or().like(Game::getDescription, keyword));
         }
-        wrapper.orderByDesc(Game::getCreateTime);
+
+        // 2. ⭐️ 新增：分类过滤条件 (如果是 0 或 null 代表查全部)
+        if (categoryId != null && categoryId != 0) {
+            wrapper.eq(Game::getCategoryId, categoryId);
+        }
+
+        // 3. ⭐️ 新增：动态排序策略
+        if ("hot".equals(sortBy)) {
+            // 热度：按评分倒序，如果评分一样，按时间倒序
+            wrapper.orderByDesc(Game::getAverageRating).orderByDesc(Game::getCreateTime);
+        } else {
+            // 默认：最新上架
+            wrapper.orderByDesc(Game::getCreateTime);
+        }
+
         return gameMapper.selectPage(pageParam, wrapper);
     }
 

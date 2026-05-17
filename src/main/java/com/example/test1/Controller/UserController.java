@@ -231,4 +231,20 @@ public class UserController {
 
         return result;
     }
+
+    // ⭐️ 只有超级管理员可以调用的封禁接口
+    @PostMapping("/admin/ban")
+    public Map<String, Object> banUser(@RequestParam Integer id, @RequestParam Integer status) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // 调用你刚在 Service 里写的方法
+            userService.updateUserStatus(id, status);
+            result.put("code", 200);
+            result.put("msg", status == 1 ? "🚫 该玩家已被成功封禁！" : "✅ 该玩家已解除封禁！");
+        } catch (Exception e) {
+            result.put("code", 500);
+            result.put("msg", "操作失败：" + e.getMessage());
+        }
+        return result;
+    }
 }

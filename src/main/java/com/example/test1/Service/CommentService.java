@@ -13,4 +13,5 @@ public interface CommentService {
     IPage<Comment> getAllCommentsForAdmin(int page, int size, String keyword);
 
     void deleteCommentByAdmin(Integer id);
+    void deleteMyComment(Integer commentId, Integer userId);
 }

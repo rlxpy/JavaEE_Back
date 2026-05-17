@@ -9,11 +9,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("comments")
+@TableName("comment")
 public class Comment {
     @TableId(type = IdType.AUTO)
     private Integer id;
@@ -23,6 +24,11 @@ public class Comment {
     private String content;
     private Integer rating;
     private Date createTime;
+    private Integer likeCount;
+    private String imageUrls;
+    private Integer parentId;
+    private String replyToNickname;
+
 
     // ⭐ 告诉 MyBatis-Plus：这个字段数据库里没有，执行 CRUD 时别管它！
     @TableField(exist = false)
@@ -30,4 +36,11 @@ public class Comment {
 
     @TableField(exist = false)
     private String avatar;
+
+    @TableField(exist = false)
+    private List<Comment> children;
+
+    // ⭐️ 为了前端点赞用的临时变量
+    @TableField(exist = false)
+    private Boolean isLiked;
 }

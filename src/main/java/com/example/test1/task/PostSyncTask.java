@@ -27,6 +27,12 @@ public class PostSyncTask {
     @Autowired
     private PostLikeMapper postLikeMapper;
 
+    @Autowired
+    private com.example.test1.mapper.CommentMapper commentMapper;
+
+    @Autowired
+    private com.example.test1.mapper.CommentLikeMapper commentLikeMapper;
+
     @Scheduled(cron = "0/30 * * * * ?")
     @Transactional(rollbackFor = Exception.class)
     public void syncPostDataToMySQL() {
@@ -111,5 +117,62 @@ public class PostSyncTask {
             }
         }
         System.out.println("✅ [定时任务完成] " + postIds.size() + " 篇帖子的数据已增量同步！\n");
+    }
+
+    // 👇 新增：评论点赞的定时同步任务
+    @Scheduled(cron = "0/30 * * * * ?")
+    @Transactional(rollbackFor = Exception.class)
+    public void syncCommentDataToMySQL() {
+        List<String> commentIdsList = stringRedisTemplate.opsForSet().pop("comment:need_sync", 1000);
+        if (commentIdsList == null || commentIdsList.isEmpty()) return;
+
+        Set<String> commentIds = new HashSet<>(commentIdsList);
+        for (String commentIdStr : commentIds) {
+            Integer commentId = Integer.parseInt(commentIdStr);
+            String likeSetKey = "comment:like:" + commentId;
+
+            // 1. 同步评论的【总点赞数】
+            Long likeCount = stringRedisTemplate.opsForSet().size(likeSetKey);
+            com.example.test1.entity.Comment updateComment = new com.example.test1.entity.Comment();
+            updateComment.setId(commentId);
+            if (likeCount != null) updateComment.setLikeCount(likeCount.intValue()); // 注意实体类里叫 like_count 还是 likeCount
+            commentMapper.updateById(updateComment);
+
+            // 2. 增量同步【明细表】(差集算法)
+            Set<String> redisUserIdsStr = stringRedisTemplate.opsForSet().members(likeSetKey);
+            Set<Integer> redisUserIds = new HashSet<>();
+            if (redisUserIdsStr != null) {
+                for (String s : redisUserIdsStr) redisUserIds.add(Integer.parseInt(s));
+            }
+
+            LambdaQueryWrapper<com.example.test1.entity.CommentLike> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(com.example.test1.entity.CommentLike::getCommentId, commentId);
+            List<com.example.test1.entity.CommentLike> mysqlLikes = commentLikeMapper.selectList(queryWrapper);
+            Set<Integer> mysqlUserIds = new HashSet<>();
+            for (com.example.test1.entity.CommentLike like : mysqlLikes) {
+                mysqlUserIds.add(like.getUserId());
+            }
+
+            Set<Integer> toAdd = new HashSet<>(redisUserIds);
+            toAdd.removeAll(mysqlUserIds);
+
+            Set<Integer> toDelete = new HashSet<>(mysqlUserIds);
+            toDelete.removeAll(redisUserIds);
+
+            for (Integer uid : toAdd) {
+                com.example.test1.entity.CommentLike newLike = new com.example.test1.entity.CommentLike();
+                newLike.setCommentId(commentId);
+                newLike.setUserId(uid);
+                commentLikeMapper.insert(newLike);
+            }
+
+            for (Integer uid : toDelete) {
+                LambdaQueryWrapper<com.example.test1.entity.CommentLike> delWrapper = new LambdaQueryWrapper<>();
+                delWrapper.eq(com.example.test1.entity.CommentLike::getCommentId, commentId)
+                        .eq(com.example.test1.entity.CommentLike::getUserId, uid);
+                commentLikeMapper.delete(delWrapper);
+            }
+        }
+        System.out.println("✅ [定时任务] " + commentIds.size() + " 条评论的点赞已同步！");
     }
 }

@@ -60,11 +60,13 @@ public class GameController {
     public Map<String, Object> getGamesByPage(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int size,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer categoryId, // ⭐️ 新增
+            @RequestParam(defaultValue = "latest") String sortBy) { // ⭐️ 新增
 
         Map<String, Object> result = new HashMap<>();
         try {
-            IPage<Game> pageInfo = gameService.getGamesByPage(page, size, keyword);
+            IPage<Game> pageInfo = gameService.getGamesByPage(page, size, keyword, categoryId, sortBy);
             Map<String, Object> pageData = new HashMap<>();
             pageData.put("total", pageInfo.getTotal());
             pageData.put("list", pageInfo.getRecords());

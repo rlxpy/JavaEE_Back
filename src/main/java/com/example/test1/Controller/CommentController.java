@@ -3,6 +3,7 @@ package com.example.test1.Controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.entity.Comment;
 import com.example.test1.Service.CommentService;
+import com.example.test1.utils.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,6 +84,24 @@ public class CommentController {
         } catch (Exception e) {
             result.put("code", 500);
             result.put("msg", "删除失败：" + e.getMessage());
+        }
+        return result;
+    }
+
+    @DeleteMapping("/delete")
+    public Map<String, Object> deleteMyComment(@RequestParam Integer id) {
+        Map<String, Object> result = new HashMap<>();
+        Integer currentUserId = UserContext.getUserId(); // 从拦截器拿到当前人的 ID
+
+        try {
+            // 直接呼叫 Service 干活！
+            commentService.deleteMyComment(id, currentUserId);
+
+            result.put("code", 200);
+            result.put("msg", "评论删除成功");
+        } catch (Exception e) {
+            // 被 Service 拦截了（比如越权），交给全局异常盾牌
+            throw new RuntimeException(e.getMessage());
         }
         return result;
     }

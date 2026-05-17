@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("users")
+@TableName("user")
 public class User {
     @TableId(type = IdType.AUTO)
     private Integer id;
@@ -27,6 +27,7 @@ public class User {
     private String nickname;
     private String avatar;
     private Integer role;
+    private Integer status;
 
     @TableField(exist = false) // 极其重要！告诉 MyBatis-Plus 数据库里没有这个字段
     private String code;
