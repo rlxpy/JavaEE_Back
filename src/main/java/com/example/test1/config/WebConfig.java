@@ -40,17 +40,17 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor).
                 // 1. 拦截所有请求
-                addPathPatterns("/**")
+                        addPathPatterns("/**")
                 // 2. ⭐️ 设置白名单（坚决不能拦截的路径）
                 .excludePathPatterns("/user/login", "/user/register") // 登录、注册必须放行
+                .excludePathPatterns("/user/resetPassword", "/email/sendCode")
                 .excludePathPatterns("/api/captcha")
-                .excludePathPatterns("/uploads/**")                   // ⭐️ 极其重要：放行图片资源，否则前端图片全挂！
+                .excludePathPatterns("/uploads/**")                   // 放行图片资源
                 .excludePathPatterns("/category/list")
                 // 3. 游客可以公开查看的数据接口（根据业务需求放行）
                 .excludePathPatterns("/game/page", "/game/list", "/game/detail/**")
                 .excludePathPatterns("/post/detail/**")
                 .excludePathPatterns("/comment/game/**", "/comment/post/**");
-
     }
 }
 

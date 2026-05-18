@@ -6,7 +6,10 @@ import com.example.test1.entity.User;
 import java.util.List;
 
 public interface UserService {
-    public User getUserById(int id);
+    User getUserById(int id);
+
+    // ⭐️ 新增：根据邮箱获取用户
+    User getUserByEmail(String email);
 
     List<User> getAllUsers();
 
@@ -18,12 +21,13 @@ public interface UserService {
 
     boolean deleteAllUsers();
 
-    //注册方法
+    // 注册方法
     String register(User user);
-    //登陆方法
+
+    // 登陆方法
     User login(String username, String password);
 
-    IPage<User> getUsersByCondition(int page,int size,String keyword, Integer role);
+    IPage<User> getUsersByCondition(int page, int size, String keyword, Integer role);
 
     void updateUserStatus(Integer id, Integer status);
 }

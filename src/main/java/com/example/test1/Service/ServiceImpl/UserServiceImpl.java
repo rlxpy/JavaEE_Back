@@ -10,7 +10,6 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,6 +21,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserById(int id) {
         return userMapper.selectById(id);
+    }
+
+    // ⭐️ 新增：根据邮箱精准捞人
+    @Override
+    public User getUserByEmail(String email) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getEmail, email);
+        return userMapper.selectOne(queryWrapper);
     }
 
     @Override
@@ -51,24 +58,30 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String register(User user) {
+        // 1. 查用户名是否重复
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUsername, user.getUsername());
-        User exitingUser = userMapper.selectOne(queryWrapper);
-
-        if(exitingUser != null) {
+        if (userMapper.selectOne(queryWrapper) != null) {
             return "用户名已存在";
+        }
+
+        // ⭐️ 2. 新增：查邮箱是否重复 (防止一个邮箱无限白嫖账号)
+        LambdaQueryWrapper<User> emailWrapper = new LambdaQueryWrapper<>();
+        emailWrapper.eq(User::getEmail, user.getEmail());
+        if (userMapper.selectOne(emailWrapper) != null) {
+            return "该邮箱已被其他账号绑定";
         }
 
         if(user.getNickname() == null || user.getNickname().isEmpty()){
             user.setNickname(user.getUsername());
         }
-        // ⭐️ 修复：如果前端传了角色就用前端的，如果没传（或恶意传空）才默认给 0 (普通玩家)
+
         if (user.getRole() == null) {
             user.setRole(0);
         }
 
-        //BCrypt 密码加盐
-        String hashPass = BCrypt.hashpw(user.getPassword(),BCrypt.gensalt());
+        // BCrypt 密码加盐
+        String hashPass = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
         user.setPassword(hashPass);
 
         userMapper.insert(user);
@@ -85,39 +98,38 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("用户名或密码错误！");
         }
 
-        // ⭐️ 第一道防线：封禁账号禁止登录！
         if (user.getStatus() != null && user.getStatus() == 1) {
             throw new RuntimeException("🚫 您的账号已被永久封停，请联系客服处理！");
         }
 
-        if(user != null && BCrypt.checkpw(password,user.getPassword())){
+        if(user != null && BCrypt.checkpw(password, user.getPassword())){
             return user;
         }
         return null;
     }
 
     @Override
-    public IPage<User> getUsersByCondition(int page, int size,String keyword, Integer role) {
+    public IPage<User> getUsersByCondition(int page, int size, String keyword, Integer role) {
         Page<User> pageParam = new Page<>(page, size);
 
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
 
         if(keyword != null && !keyword.isEmpty()){
-            wrapper.and(w -> w.like(User::getUsername,keyword).or().like(User::getNickname,keyword));
+            wrapper.and(w -> w.like(User::getUsername, keyword).or().like(User::getNickname, keyword));
         }
 
         if(role != null){
-            wrapper.eq(User::getRole,role);
+            wrapper.eq(User::getRole, role);
         }
 
-        return userMapper.selectPage(pageParam,wrapper);
+        return userMapper.selectPage(pageParam, wrapper);
     }
 
-    // ⭐️ 封禁/解封用户的方法
+    @Override
     public void updateUserStatus(Integer id, Integer status) {
         com.example.test1.entity.User user = new com.example.test1.entity.User();
         user.setId(id);
         user.setStatus(status);
-        userMapper.updateById(user); // 只更新 status 字段
+        userMapper.updateById(user);
     }
 }

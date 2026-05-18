@@ -28,6 +28,7 @@ public class User {
     private String avatar;
     private Integer role;
     private Integer status;
+    private String email;
 
     @TableField(exist = false) // 极其重要！告诉 MyBatis-Plus 数据库里没有这个字段
     private String code;

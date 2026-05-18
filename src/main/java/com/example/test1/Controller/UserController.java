@@ -1,10 +1,12 @@
 package com.example.test1.Controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.test1.Service.UserService;
 import com.example.test1.entity.User;
 import com.example.test1.utils.JwtUtils;
 import jakarta.validation.Valid;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -92,40 +94,35 @@ public class UserController {
     /*登陆注册区域*/
     // 注册接口：使用 POST 请求
     @PostMapping("/register")
-    public Map<String, Object> register(@Valid @RequestBody User user) {
+    public Map<String, Object> register(@Valid @RequestBody User user, @RequestParam(required = false) String emailCode) {
         Map<String, Object> result = new HashMap<>();
 
         String uuid = user.getUuid();
         String userCode = user.getCode();
 
-        // 1. 基本参数防漏检查
-        if (uuid == null || userCode == null || uuid.isEmpty() || userCode.isEmpty()) {
+        // 1. 检查邮箱和验证码有没有传
+        if (user.getEmail() == null || user.getEmail().isEmpty() || emailCode == null || emailCode.isEmpty()) {
             result.put("code", 400);
-            result.put("msg", "验证码或暗号缺失！");
-            return result; // 🚨 直接阻断，绝不放行！
+            result.put("msg", "邮箱或邮箱验证码缺失！");
+            return result;
         }
 
-        // 2. 去 Redis 拿真实的答案（根据前端给的暗号）
-        // 注意：这里你的 redis key 名字要和你生成验证码存进去时保持一致！比如如果是 "captcha:" + uuid
-        String redisKey = "captcha:" + uuid;
+        // 2. 去 Redis 核对邮箱验证码
+        String redisKey = "email:code:" + user.getEmail();
         String realCode = stringRedisTemplate.opsForValue().get(redisKey);
 
-        // 3. 绝杀技：阅后即焚（防止重放攻击）
-        // 只要我查过了，不管接下来是对是错，立刻把 Redis 里的验证码炸毁！
         stringRedisTemplate.delete(redisKey);
 
-        // 4. 防过期检查
         if (realCode == null) {
             result.put("code", 400);
-            result.put("msg", "验证码已过期，请点击图片重新获取！");
-            return result; // 阻断！
+            result.put("msg", "验证码已过期，请重新获取！");
+            return result;
         }
 
-        // 5. 对比答案（equalsIgnoreCase 表示忽略大小写，a 和 A 都算对）
-        if (!realCode.equalsIgnoreCase(userCode)) {
+        if (!realCode.equals(emailCode)) {
             result.put("code", 400);
-            result.put("msg", "验证码输入错误！");
-            return result; // 阻断！
+            result.put("msg", "邮箱验证码错误！");
+            return result;
         }
 
         // ⭐️ 安全防御：如果前端传来的 role 是 2（超级管理员）或者为空，强制降级为 0（普通玩家）
@@ -245,6 +242,106 @@ public class UserController {
             result.put("code", 500);
             result.put("msg", "操作失败：" + e.getMessage());
         }
+        return result;
+    }
+
+    // ⭐️ 新增：忘记密码 / 重置密码接口 (修复了没加密的致命 Bug)
+    @PostMapping("/resetPassword")
+    public Map<String, Object> resetPassword(@RequestParam String email, @RequestParam String code, @RequestParam String newPassword) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (email == null || code == null || newPassword == null) {
+            result.put("code", 400);
+            result.put("msg", "参数不能为空");
+            return result;
+        }
+
+        // 1. 去 Redis 核对邮箱验证码
+        String redisKey = "email:code:" + email;
+        String realCode = stringRedisTemplate.opsForValue().get(redisKey);
+
+        if (realCode == null || !realCode.equals(code)) {
+            result.put("code", 400);
+            result.put("msg", "验证码错误或已过期");
+            return result;
+        }
+
+        // 2. 调用咱们“老办法”写的 getUserByEmail
+        User user = userService.getUserByEmail(email);
+
+        if (user == null) {
+            result.put("code", 400);
+            result.put("msg", "该邮箱尚未注册账号！");
+            return result;
+        }
+
+        // ⭐️ 3. 极其重要的修正：新密码必须走 BCrypt 加密！否则无法登录！
+        String hashPass = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+        user.setPassword(hashPass);
+
+        // 调用咱们“老办法”的 update 方法
+        boolean success = userService.updateUserById(user);
+
+        if (success) {
+            // 阅后即焚
+            stringRedisTemplate.delete(redisKey);
+            result.put("code", 200);
+            result.put("msg", "密码重置成功，请使用新密码登录！");
+        } else {
+            result.put("code", 500);
+            result.put("msg", "密码重置失败，请联系管理员");
+        }
+
+        return result;
+    }
+
+    // ==========================================
+    // ⭐️ 新增：个人中心专属 - 修改密码接口（带旧密码校验）
+    // ==========================================
+    @PostMapping("/changePassword")
+    public Map<String, Object> changePassword(
+            @RequestParam Integer id,
+            @RequestParam String oldPassword,
+            @RequestParam String newPassword) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        // 1. 基本参数校验
+        if (id == null || oldPassword == null || newPassword == null || newPassword.trim().isEmpty()) {
+            result.put("code", 400);
+            result.put("msg", "参数不完整");
+            return result;
+        }
+
+        // 2. 去数据库里查出当前用户
+        User user = userService.getUserById(id);
+        if (user == null) {
+            result.put("code", 400);
+            result.put("msg", "未找到该账号信息！");
+            return result;
+        }
+
+        // 3. ⭐️ 核心防御：校验旧密码是否正确 (用 BCrypt 核对)
+        if (!BCrypt.checkpw(oldPassword, user.getPassword())) {
+            result.put("code", 400);
+            result.put("msg", "原密码输入错误，请重新输入！");
+            return result;
+        }
+
+        // 4. 校验通过，给新密码加盐加密
+        String hashPass = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+        user.setPassword(hashPass);
+
+        // 5. 执行更新
+        boolean success = userService.updateUserById(user);
+        if (success) {
+            result.put("code", 200);
+            result.put("msg", "密码修改成功，安全凭证已失效，请重新登录！");
+        } else {
+            result.put("code", 500);
+            result.put("msg", "服务器异常，修改失败");
+        }
+
         return result;
     }
 }
