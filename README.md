@@ -62,3 +62,13 @@
 2. 安装依赖：
    ```bash
    npm install
+3. 启动开发服务器：
+   ```bash
+   npm run dev
+浏览器访问终端输出的本地地址（如 http://localhost:5173）即可体验！
+
+🤝 贡献与参与
+本项目为课堂演练与开源交流项目。欢迎提交 Pull Request 或 Issue 探讨优化方案！
+
+📄 开源协议
+本项目基于 MIT License 协议开源。
