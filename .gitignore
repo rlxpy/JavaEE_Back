@@ -1,0 +1,22 @@
+# ================= Java & Maven =================
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# ================= IDEA 编辑器缓存 =================
+.idea/
+*.iml
+*.iws
+.classpath
+.project
+.settings/
+
+# ================= ⭐️ 核心机密脱敏 =================
+# 忽略存放真实密码的配置文件
+application-secret.properties
+application-dev.yml
+
+src/main/resources/application.properties
